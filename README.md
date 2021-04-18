@@ -16,7 +16,8 @@ pip install -r requirements.txt
 
 ## Run
 
-Run spider by explicitly specifying url to product (`ex: https://www.target.com/p/standish-3pc-patio-bar-height-dining-set-charcoal-project-62-8482/-/A-53957008#lnk=sametab`)
+Run spider by explicitly specifying url to product 
+(`ex: https://www.target.com/p/standish-3pc-patio-bar-height-dining-set-charcoal-project-62-8482/-/A-53957008#lnk=sametab`)
 ```sh
 scrapy crawl target -a url="<url>"
 ```
