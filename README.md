@@ -1,6 +1,7 @@
 # test_task_target
 
-## Install and activate virtual environment
+## Preparing
+### Install and activate virtual environment
 ```sh
 # Create virtual environment
 virtualenv venv
@@ -8,7 +9,7 @@ virtualenv venv
 source venv/bin/activate
 ```
 
-Change working folder and install dependencies
+### Change working folder and install dependencies
 ```sh
 cd test_task
 pip install -r requirements.txt
