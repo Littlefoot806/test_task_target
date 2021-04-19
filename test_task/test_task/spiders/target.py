@@ -29,13 +29,12 @@ class TargetSpider(scrapy.Spider):
         crawl_url = self.crawl_item_url.format(apikey, tcin, pricing_store_id)
         yield Request(
             crawl_url,
-            cb_kwargs={"tcin": tcin},
             headers={"accept": "application / json"},
             callback=self.parse_item,
             dont_filter=True,
         )
 
-    def parse_item(self, response, tcin):
+    def parse_item(self, response):
         item = TestTaskItem()
 
         json_data = json.loads(response.body.decode())
