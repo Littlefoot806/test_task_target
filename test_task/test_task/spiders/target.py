@@ -1,8 +1,10 @@
 import json
+import re
 
 import jmespath
 import scrapy
 from scrapy.http import Request
+from w3lib.url import url_query_parameter
 
 from test_task.items import TestTaskItem
 
@@ -12,25 +14,27 @@ class TargetSpider(scrapy.Spider):
     allowed_domains = ["https://www.target.com"]
     start_urls = []
     crawl_item_url = (
-        "https://redsky.target.com/redsky_aggregations/v1/web/pdp_client_v1?key={}&tcin={}"
-        "&store_id=none&has_store_id=false&pricing_store_id={}&has_pricing_store_id=true"
-        "&scheduled_delivery_store_id=none&has_scheduled_delivery_store_id=false&has_financing_options=false"
+        "https://redsky.target.com/redsky_aggregations/v1/web/pdp_client_v1?"
+        "key=9f36aeafbe60771e321a7cc95a78140772ab3e96&tcin={}&is_bot=false"
+        "&store_id=1771&pricing_store_id=1771&has_pricing_store_id=true&has_financing_options=true"
+        "&has_size_context=true&skip_personalized=true"
+        "&skip_variation_hierarchy=true&channel=WEB&page=%2Fp%2Fundefined"
     )
 
     def __init__(self, url):
         self.start_urls.append(url)
         super(TargetSpider, self).__init__()
 
-    def parse(self, response):
+    def parse(self, response, *args, **kwargs):
 
-        tgt_data_json = self._get_tgt_data_json(response)
-        apikey, tcin, pricing_store_id = self._get_params(tgt_data_json)
+        tcin_from_url = self._tcin_from_url(response)
 
-        crawl_url = self.crawl_item_url.format(apikey, tcin, pricing_store_id)
+        crawl_url = self.crawl_item_url.format(tcin_from_url)
         yield Request(
             crawl_url,
-            headers={"accept": "application / json"},
+            headers={"accept": "application/json"},
             callback=self.parse_item,
+            meta={'handle_httpstatus_list': [404]},
             dont_filter=True,
         )
 
@@ -49,15 +53,8 @@ class TargetSpider(scrapy.Spider):
 
         return item
 
-    def _get_tgt_data_json(self, response):
-        tgt_data = response.xpath('//script[contains(text(), "window.__TGT_DATA__=")]/text()').get()
-        tgt_data = tgt_data.replace("window.__TGT_DATA__= ", "").replace("undefined", "0")
-        return json.loads(tgt_data)
-
-    def _get_params(self, tgt_data_json):
-        apikey = jmespath.search("__PRELOADED_QUERIES__.queries[0][0][1].apiKey", tgt_data_json)
-        tcin = jmespath.search("__PRELOADED_QUERIES__.queries[0][0][1].tcin", tgt_data_json)
-        pricing_store_id = jmespath.search(
-            "__PRELOADED_QUERIES__.queries[0][0][1].pricing_store_id", tgt_data_json
-        )
-        return apikey, tcin, pricing_store_id
+    def _tcin_from_url(self, response):
+        preselected_tcin = url_query_parameter(response.url, 'preselect')
+        found = re.search(r'A-(\d+)', response.url)
+        if preselected_tcin or found:
+            return preselected_tcin or found.group(1)
